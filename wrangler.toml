@@ -1,0 +1,33 @@
+name = "komerza-skinloop-rust"
+main = "src/worker.ts"
+compatibility_date = "2026-09-22"
+
+[vars]
+SKINLOOP_API_BASE_URL = ""
+SKINLOOP_HOSTED_ORIGIN = ""
+PUBLIC_BASE_URL = ""
+KOMERZA_STORE_ID = ""
+USD_PER_EUR = ""
+FX_BUFFER_BPS = ""
+CHECKOUT_EXPIRES_SECONDS = ""
+SHOP_URL = ""
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "komerza-skinloop-rust"
+database_id = ""
+migrations_dir = "migrations"
+
+[[queues.producers]]
+binding = "FULFILLMENT_QUEUE"
+queue = "komerza-skinloop-rust-fulfillment"
+
+[[queues.consumers]]
+queue = "komerza-skinloop-rust-fulfillment"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 10
+dead_letter_queue = "komerza-skinloop-rust-dead-letter"
