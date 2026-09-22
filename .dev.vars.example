@@ -1,0 +1,6 @@
+# Cloudflare's deployment flow prompts the merchant for these values.
+# Never commit real values.
+SKINLOOP_API_KEY=
+SKINLOOP_WEBHOOK_SECRET_CURRENT=
+SKINLOOP_WEBHOOK_SECRET_PREVIOUS=
+KOMERZA_API_KEY=
