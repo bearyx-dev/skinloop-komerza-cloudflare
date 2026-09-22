@@ -1,0 +1,22 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const run = (args) => execFileSync("wrangler", args, { encoding: "utf8", stdio: ["inherit", "pipe", "inherit"] });
+const parse = (text, label) => { try { return JSON.parse(text); } catch { throw new Error(`wrangler returned invalid JSON for ${label}`); } };
+const name = process.env.D1_NAME || "komerza-skinloop-rust";
+const queue = process.env.QUEUE_NAME || "komerza-skinloop-rust-fulfillment";
+const dlq = process.env.DLQ_NAME || "komerza-skinloop-rust-dead-letter";
+const queues = parse(run(["queues", "list", "--json"]), "queues");
+const queueNames = new Set((Array.isArray(queues) ? queues : queues.queues || []).map((x) => x.queue_name || x.name));
+if (!queueNames.has(queue)) run(["queues", "create", queue]);
+if (!queueNames.has(dlq)) run(["queues", "create", dlq]);
+const dbs = parse(run(["d1", "list", "--json"]), "D1 databases");
+const found = (Array.isArray(dbs) ? dbs : dbs.databases || []).find((x) => (x.name || x.database_name) === name);
+const created = found || parse(run(["d1", "create", name, "--json"]), "D1 create");
+const databaseId = found?.uuid || found?.database_id || created.uuid || created.database_id;
+if (!databaseId) throw new Error("D1 response did not contain a database id");
+let config = readFileSync("wrangler.toml", "utf8");
+config = config.replace(/database_id = "[^"]*"/, `database_id = "${databaseId}"`);
+writeFileSync("wrangler.toml", config);
+run(["d1", "migrations", "apply", "komerza-skinloop-rust", "--remote"]);
+console.log("Resources and remote migrations provisioned. Set safe variables and encrypted secrets, then run scripts/deploy.sh.");
